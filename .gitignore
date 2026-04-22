@@ -6,6 +6,7 @@ dist/
 build/
 .eggs/
 *.egg
+*.pyc
 
 # Virtual environments
 venv/
@@ -21,6 +22,7 @@ venv/
 # Node
 node_modules/
 package-lock.json
+yarn.lock
 
 # OS
 .DS_Store
@@ -33,6 +35,7 @@ Thumbs.db
 # Database
 *.db
 *.sqlite3
+*.sqlite
 
 # Docker
 .dockerenv
@@ -40,6 +43,7 @@ Thumbs.db
 # Coverage
 .coverage
 htmlcov/
-
-# Pytest
 .pytest_cache/
+
+# Hypothesis
+.hypothesis/

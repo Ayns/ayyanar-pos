@@ -1,55 +1,76 @@
-# Ayyyanar Tech
+# Ayyyanar Tech — POS for Indian Apparel Retail
 
-Single-node engineering workspace for Ayyyanar Tech v0.1. No product thesis yet — this repo holds the engineering foundation so we can ship the second a thesis lands.
-
-## Status
-
-- **Phase:** 0 (engineering readiness). See issue `AYY-2`.
-- **Team:** 1 (CTO). Second engineer only after v0.1 ships.
-- **Budget:** $0 until the board sets a Phase 1 envelope.
-- **Thesis:** TBD (tracked separately under `AYY-1`).
-
-## Stack
-
-Full rationale lives in the Phase 0 plan document on `AYY-2`. Short version:
-
-- **Language:** TypeScript on Node.js 22 LTS
-- **Framework:** Next.js (App Router) — web + API in one deploy unit
-- **Data:** Prisma + SQLite locally, Postgres in prod (migrate when we need it)
-- **Tests:** Vitest + Playwright (Playwright added when there is UI worth testing)
-- **Lint/format:** Biome (single tool, no Prettier+ESLint matrix)
-- **Package manager:** pnpm
-- **CI:** GitHub Actions (wired when a remote repo exists)
-
-Nothing here is a one-way door. Every piece can be swapped before Phase 1 without rewriting business logic.
+Point-of-sale software for Indian apparel retail brands. Single-store to multi-store, with offline-first sync, GST compliance, and Tally integration.
 
 ## Layout
 
 ```
 .
 ├── README.md          — this file
-├── ENGINEERING.md     — how we work (branching, commits, reviews, CI, intake)
-└── .gitignore         — node/next/prisma/editor/OS noise
+├── ENGINEERING.md     — how we work
+├── PROJECT_DOCUMENTATION.md — full project catalog
+│
+├── backend/           — Django backend
+│   ├── backend/       — Django project (settings, urls, wsgi)
+│   ├── backend/billing/     — Till billing module
+│   ├── backend/catalogue/   — Product catalogue (apparel)
+│   ├── backend/customers/   — Customer management
+│   ├── backend/inventory/   — Stock ledger
+│   ├── backend/irp/         — E-invoice IRP client
+│   ├── backend/licence/     — Licence server
+│   ├── backend/sync/        — Offline sync endpoints
+│   ├── backend/tally/       — Tally daily voucher export
+│   ├── backend/till/        — Till views
+│   ├── backend/hoc/         — Head-office console
+│   ├── irp_client/        — IRP retry/DLQ state machine
+│   ├── sync_core/         — Outbox drainer + cloud replayer
+│   ├── tally_client/        — Tally XML generator
+│   ├── importers/           — CSV catalogue importer
+│   ├── manage.py            — Django CLI
+│   ├── docker-compose.yml   — Store box deployment
+│   ├── nginx/               — Reverse proxy config
+│   └── build.sh / deploy.sh — Deployment scripts
+│
+├── frontend/          — React POS terminal + HO console
+│   ├── src/             — POS terminal app (React)
+│   ├── public/          — HTML, manifest, service worker
+│   ├── pos-app/         — Alternative POS prototype
+│   └── package.json     — Dependencies
+│
+└── spikes/            — Technical spikes & prototypes
+    ├── pos_spike/       — Event-sourced outbox (AYY-13)
+    ├── irp_spike/       — E-invoice IRP reliability (AYY-14)
+    └── tally_spike/     — Tally export correctness (AYY-15)
 ```
 
-Application scaffolding (`package.json`, `tsconfig.json`, `app/`, `prisma/`) lands at sprint 0 kickoff, once the product thesis picks the first slice to build.
+## Getting Started
 
-## Getting started
-
-Nothing to run yet. When sprint 0 starts:
+### Backend (Django)
 
 ```sh
-pnpm install
-pnpm dev
+cd backend
+python manage.py migrate
+python manage.py runserver
 ```
 
-## Workflow
+### Frontend (React)
 
-Read `ENGINEERING.md` before opening your first PR.
+```sh
+cd frontend
+npm install
+npm start
+```
 
-## Ownership
+### Docker Compose (full stack)
 
-- **CTO:** @cto (Ayyyanar Tech)
-- **Escalation:** @ceo
+```sh
+cd backend
+docker-compose up -d
+```
 
-Work enters the engineering queue via Paperclip — see `ENGINEERING.md` § Intake.
+## Stack
+
+- **Backend:** Python 3.12 + Django + Postgres 16 + Redis 7 + Celery
+- **Frontend:** React + IndexedDB (offline) + Service Worker
+- **Infra:** Docker Compose, Nginx, Nuitka for critical modules
+- **Tests:** pytest (backend), Jest/React Testing Library (frontend)
