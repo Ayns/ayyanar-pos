@@ -1,0 +1,10 @@
+# AYY-27 — Data and secrets (never commit)
+data/
+certs/*.crt
+certs/*.key
+.env
+*.sqlite3
+__pycache__/
+*.pyc
+staticfiles/
+media/

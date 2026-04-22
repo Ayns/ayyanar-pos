@@ -1,0 +1,146 @@
+version: "3.9"
+
+# AYY-27 — Docker Compose store box
+# Single-command deploy: docker compose up -d
+#
+# Services:
+#   web   — Django (gunicorn + uvicorn for Celery beat)
+#   db    — Postgres 16
+#   redis — Redis 7 (Celery broker)
+#   celery — Celery worker (drainer + e-invoice queue)
+#   nginx — Reverse proxy + till HTTPS
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: storebox/Dockerfile.web
+    container_name: ayy-pos-web
+    environment:
+      - DJANGO_ENV=store
+      - DATABASE_URL=postgres://ayypos:${POSTGRES_PASSWORD:-ayypos_secret}@db:5432/ayypos
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${DJANGO_SECRET_KEY:-dev-not-for-production}
+      - CLOUD_API_URL=${CLOUD_API_URL:-http://localhost:8000}
+      - STORE_ID=${STORE_ID:-store-0001}
+      - NYUOTA_COMPILE=${NYUOTA_COMPILE:-0}
+    volumes:
+      - /home/ubuntu/ayypos-data/media:/app/media
+    expose:
+      - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: postgres:16-alpine
+    container_name: ayy-pos-db
+    environment:
+      - POSTGRES_DB=ayypos
+      - POSTGRES_USER=ayypos
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ayypos_secret}
+    volumes:
+      - /home/ubuntu/ayypos-data/pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ayypos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    container_name: ayy-pos-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - /home/ubuntu/ayypos-data/redisdata:/data
+    expose:
+      - "6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  celery:
+    build:
+      context: ..
+      dockerfile: storebox/Dockerfile.web
+    container_name: ayy-pos-celery
+    environment:
+      - DJANGO_ENV=store
+      - DATABASE_URL=postgres://ayypos:${POSTGRES_PASSWORD:-ayypos_secret}@db:5432/ayypos
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${DJANGO_SECRET_KEY:-dev-not-for-production}
+      - CLOUD_API_URL=${CLOUD_API_URL:-http://localhost:8000}
+      - STORE_ID=${STORE_ID:-store-0001}
+    volumes:
+      - /home/ubuntu/ayypos-data/media:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    command: >
+      sh -c "
+        cd /app &&
+        celery -A ayypos worker -l info -c 2 -Q drainer,einvoice,default
+      "
+
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: storebox/Dockerfile.web
+    container_name: ayy-pos-celery-beat
+    environment:
+      - DJANGO_ENV=store
+      - DATABASE_URL=postgres://ayypos:${POSTGRES_PASSWORD:-ayypos_secret}@db:5432/ayypos
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${DJANGO_SECRET_KEY:-dev-not-for-production}
+      - CLOUD_API_URL=${CLOUD_API_URL:-http://localhost:8000}
+      - STORE_ID=${STORE_ID:-store-0001}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    command: >
+      sh -c "
+        cd /app &&
+        celery -A ayypos beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      "
+
+  nginx:
+    image: nginx:1.26-alpine
+    container_name: ayy-pos-nginx
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      web:
+        condition: service_started
+    restart: unless-stopped
+
+# All persistent data lives on the host at /home/ubuntu/ayypos-data/:
+#   /home/ubuntu/ayypos-data/pgdata     — PostgreSQL
+#   /home/ubuntu/ayypos-data/redisdata  — Redis
+#   /home/ubuntu/ayypos-data/media      — uploaded files (bills, images, tally exports)

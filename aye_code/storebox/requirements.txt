@@ -1,0 +1,37 @@
+# AYY-27 — Requirements for the store box Django application
+#
+# Pinned versions for reproducible builds.
+# All dependencies are free/open-source. No external paywalls.
+
+# Django stack
+Django>=4.2,<5.1
+djangorestframework>=3.14,<4
+django-filter>=23.0
+dj-database-url>=2.1
+
+# WSGI / ASGI
+gunicorn>=21.0
+uvicorn>=0.23,<1
+
+# Celery
+celery>=5.3,<6
+django-celery-beat>=2.5,<3
+
+# Database
+psycopg2-binary>=2.9
+
+# Cache / broker
+redis>=5.0
+
+# HTTP client (IRP, cloud sync)
+requests>=2.31
+urllib3>=2.0
+
+# Tally XML export
+lxml>=4.9,<6
+
+# Dev/test (only needed if running tests in container)
+pytest>=7.4
+pytest-django>=4.5
+hypothesis>=6.89
+coverage>=7.3

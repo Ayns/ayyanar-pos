@@ -1,0 +1,30 @@
+{
+  "name": "ayy-pos-frontend",
+  "version": "1.0.0",
+  "description": "AYY POS — Indian Apparel Point-of-Sale Terminal (Frontend)",
+  "private": true,
+  "dependencies": {
+    "idb": "^7.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%, not dead, not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version"
+    ]
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "playwright": "^1.59.1"
+  }
+}

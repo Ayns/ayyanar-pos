@@ -1,0 +1,9 @@
+{
+  "short_name": "AYY POS",
+  "name": "AYY POS Terminal",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a1a2e",
+  "background_color": "#1a1a2e"
+}

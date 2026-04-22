@@ -1,0 +1,10 @@
+# AYY-13 R1 spike requirements — used as base for production Dockerfile
+# See storebox/requirements.txt for the full production set
+
+Django>=4.2,<5.1
+djangorestframework>=3.14,<4
+hypothesis>=6.89
+pytest>=7.4
+pytest-django>=4.5
+psycopg2-binary>=2.9
+redis>=5.0
